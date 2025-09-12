@@ -58,7 +58,7 @@ def nextln(count=1) -> str:
     return re.sub(r"\w+:", "", next(LINES), count=count).strip()
 
 
-def process_batch():
+def parse_block():
     nextln()
     id_ = nextln()
     asin = nextln()
@@ -106,7 +106,7 @@ next(LINES)
 
 try:
     while True:
-        process_batch()
+        parse_block()
 except StopIteration:
     pass
 
