@@ -55,7 +55,7 @@ TUPS = {table: set() for table in re.findall(r"(\w+) \(\n", SQL)}
 
 
 def nextln(count=1) -> str:
-    return re.sub(r"\w+:", "", next(LINES), count=count).strip()
+    return re.sub(r"\w+:", "", next(txt), count=count).strip()
 
 
 def parse_block():
@@ -74,7 +74,7 @@ def parse_block():
     cats = nextln()
     for _ in range(int(cats)):
         parent_id = None
-        for descr, cat_id in re.findall(r"\|([^\[]*)\[(\d+)\]", next(LINES)):
+        for descr, cat_id in re.findall(r"\|([^\[]*)\[(\d+)\]", next(txt)):
             parent_id = parent_id or cat_id
             TUPS["category"].add((cat_id, descr))
             TUPS["product_category"].add((asin, cat_id))
@@ -99,16 +99,14 @@ def populate():
         # os.remove(file)
 
 
-with open(TXT) as f:
-    LINES = iter(f.readlines())
-next(LINES)
-next(LINES)
-
-try:
-    while True:
-        parse_block()
-except StopIteration:
-    pass
+with open(TXT) as txt:
+    next(txt)
+    next(txt)
+    try:
+        while True:
+            parse_block()
+    except StopIteration:
+        pass
 
 asins = {p[1] for p in TUPS["product"]}
 TUPS["psimilar"] = {s for s in TUPS["psimilar"] if s[1] in asins}
