@@ -98,7 +98,7 @@ def populate():
             csv.writer(f).writerows(tups)
         with open(file) as f:
             curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", f)
-        # os.remove(file)
+        os.remove(file)
 
 
 with open(TXT) as txt:
