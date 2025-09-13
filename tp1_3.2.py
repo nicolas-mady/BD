@@ -3,7 +3,7 @@ import re
 import csv
 import psycopg2 as pg
 
-TXT = "amazon-meta-sample.txt"
+TXT = "amazon-meta.txt"
 SQL = """
 CREATE TABLE IF NOT EXISTS product (
     id int UNIQUE NOT NULL,
@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS review (
 );
 """
 TUPS = {table: set() for table in re.findall(r"(\w+) \(\n", SQL)}
+ASINS = set()
 
 
 def nextln(count=1) -> str:
@@ -62,6 +63,7 @@ def parse_block():
     nextln()
     id_ = nextln()
     asin = nextln()
+    ASINS.add(asin)
     title = nextln().replace('"', '""')
     if "discontinued" in title:
         TUPS["product"].add((id_, asin, "", "", "", "", "", "", "", ""))
@@ -108,8 +110,7 @@ with open(TXT) as txt:
     except StopIteration:
         pass
 
-asins = {p[1] for p in TUPS["product"]}
-TUPS["psimilar"] = {s for s in TUPS["psimilar"] if s[1] in asins}
+TUPS["psimilar"] = {s for s in TUPS["psimilar"] if s[1] in ASINS}
 
 os.system("dropdb ecommerce")
 os.system("createdb ecommerce")
