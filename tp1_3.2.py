@@ -5,123 +5,122 @@ import psycopg2 as pg
 
 TXT = "amazon-meta.txt"
 SQL = """
-CREATE TABLE IF NOT EXISTS product (
-    id int UNIQUE NOT NULL,
-    asin char(10) PRIMARY KEY,
-    title text,
-    pgroup varchar(12),
-    salesrank int,
-    sim int,
-    cats int,
-    tot int,
-    dl int,
-    avg_rating real
+CREATE TABLE products (
+	pid int PRIMARY KEY,
+	asin char(10) UNIQUE NOT NULL,
+	title text,
+	grp varchar(12),
+	srank int,
+	sims int,
+	cats int,
+	tot int,
+	dl int,
+	av_rt real
 );
 
-CREATE TABLE IF NOT EXISTS psimilar (
-    asin char(10) REFERENCES product(asin) ON DELETE CASCADE,
-    asin_sim char(10) REFERENCES product(asin) ON DELETE CASCADE,
-    PRIMARY KEY (asin, asin_sim)
+CREATE TABLE similars (
+	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
+	sim char(10) REFERENCES products(asin) ON DELETE CASCADE,
+	PRIMARY KEY (asin, sim)
 );
 
-CREATE TABLE IF NOT EXISTS category (
-    cat_id int PRIMARY KEY,
-    descr text
+CREATE TABLE categories (
+	cid int PRIMARY KEY,
+	descr text,
+	super_id int REFERENCES categories(cid) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS product_category (
-    asin char(10) REFERENCES product(asin) ON DELETE CASCADE,
-    cat_id int REFERENCES category(cat_id) ON DELETE CASCADE,
-    PRIMARY KEY (asin, cat_id)
+CREATE TABLE products_categories (
+	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
+	cid int REFERENCES categories(cid) ON DELETE CASCADE,
+	PRIMARY KEY (asin, cid)
 );
 
-CREATE TABLE IF NOT EXISTS category_hierarchy (
-    cat_id int REFERENCES category(cat_id) ON DELETE CASCADE,
-    parent_id int REFERENCES category(cat_id) ON DELETE CASCADE,
-    PRIMARY KEY (cat_id, parent_id)
-);
-
-CREATE TABLE IF NOT EXISTS review (
-    asin char(10) REFERENCES product(asin) ON DELETE CASCADE,
-    rdate date NOT NULL,
-    usr_id varchar(14),
-    rating int NOT NULL,
-    votes int NOT NULL,
-    helpful int NOT NULL,
-    PRIMARY KEY (asin, usr_id, rdate)
+CREATE TABLE reviews (
+	rid int PRIMARY KEY,
+	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
+	day date,
+	uid varchar(14),
+	rating int,
+	votes int,
+	helpful int
 );
 """
-TUPS = {table: set() for table in re.findall(r"(\w+) \(\n", SQL)}
-ASINS = set()
-
+tables = re.findall(r"(\w+) \(\n", SQL)
+PK = {table: set() for table in tables}
+TUPS = {table: [] for table in tables}
 
 def nextln(count=1) -> str:
-    return re.sub(r"\w+:", "", next(txt), count=count).strip()
+	return re.sub(r"\w+( \w+)?:", "", next(txt), count=count).strip()
 
 
 def parse_block():
-    nextln()
-    id_ = nextln()
-    asin = nextln()
-    ASINS.add(asin)
-    title = nextln().replace('"', '""')
-    if "discontinued" in title:
-        TUPS["product"].add((id_, asin, "", "", "", "", "", "", "", ""))
-        return
-    pgroup = nextln()
-    salesrank = nextln()
-    sim, *asins = nextln().split()
-    for asin_sim in asins:
-        TUPS["psimilar"].add((asin, asin_sim))
-    cats = nextln()
-    for _ in range(int(cats)):
-        parent_id = None
-        for descr, cat_id in re.findall(r"\|([^\[]*)\[(\d+)\]", next(txt)):
-            parent_id = parent_id or cat_id
-            TUPS["category"].add((cat_id, descr))
-            TUPS["product_category"].add((asin, cat_id))
-            TUPS["category_hierarchy"].add((cat_id, parent_id))
-            parent_id = cat_id
-    tot, dl, _, avg_rating = nextln(0).split()
-    TUPS["product"].add(
-        (id_, asin, title, pgroup, salesrank, sim, cats, tot, dl, avg_rating)
-    )
-    for _ in range(int(dl)):
-        TUPS["review"].add((asin, *nextln(0).split()))
+	next(txt)
+	pid = nextln()
+	asin = nextln()
+	PK["products"].add(asin)
+	title = nextln().replace('"', '""')
 
+	if "discontinued" in title:
+		TUPS["products"].append((pid, asin, "", "", "", "", "", "", "", ""))
+		return
 
-def populate():
-    curs.execute(SQL)
-    for table, tups in TUPS.items():
-        file = f"{table}.csv"
-        with open(file, "w") as f:
-            csv.writer(f).writerows(tups)
-        with open(file) as f:
-            curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", f)
-        os.remove(file)
+	grp = nextln()
+	srank = nextln()
+	sims, *asins = nextln().split()
+
+	for sim in asins:
+		TUPS["similars"].append((asin, sim))
+
+	cats = nextln()
+
+	for _ in range(int(cats)):
+		super_id = ""
+		for descr, cid in re.findall(r"\|([^\[]*)\[(\d+)\]", next(txt)):
+			if cid not in PK["categories"]:
+				PK["categories"].add(cid)
+				TUPS["categories"].append((cid, descr, super_id))
+			if (asin, cid) not in PK["products_categories"]:
+				PK["products_categories"].add((asin, cid))
+				TUPS["products_categories"].append((asin, cid))
+			super_id = cid
+
+	rev = nextln(0).split()
+
+	TUPS["products"].append((pid, asin, title, grp, srank, sims, cats, *rev))
+
+	for _ in range(int(rev[1])):
+		rid = len(TUPS["reviews"])
+		TUPS["reviews"].append((rid, asin, *nextln(0).split()))
 
 
 with open(TXT) as txt:
-    next(txt)
-    next(txt)
-    try:
-        while True:
-            parse_block()
-    except StopIteration:
-        pass
+	try:
+		next(txt)
+		next(txt)
+		while True:
+			parse_block()
+	except StopIteration:
+		pass
 
-TUPS["psimilar"] = {s for s in TUPS["psimilar"] if s[1] in ASINS}
+TUPS["similars"] = [t for t in TUPS["similars"] if t[1] in PK["products"]]
 
 os.system("dropdb ecommerce")
 os.system("createdb ecommerce")
 
 with pg.connect(
-    dbname="ecommerce",
-    user="postgres",
-    password="postgres",
-    host="localhost",
-    port="5432"
+	dbname="ecommerce",
+	user="postgres",
+	password="postgres",
+	host="localhost",
+	port="5432"
 ) as conn:
-    with conn.cursor() as curs:
-        populate()
-    conn.commit()
+	with conn.cursor() as curs:
+		curs.execute(SQL)
+		for table, tups in TUPS.items():
+			with open(table, "w") as f:
+				csv.writer(f).writerows(tups)
+			with open(table) as f:
+				curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", f)
+			os.remove(table)
+	conn.commit()
