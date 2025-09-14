@@ -4,51 +4,12 @@ import csv
 import psycopg2 as pg
 
 TXT = "amazon-meta.txt"
-SQL = """
-CREATE TABLE products (
-	pid int PRIMARY KEY,
-	asin char(10) UNIQUE NOT NULL,
-	title text,
-	grp varchar(12),
-	srank int,
-	sims int,
-	cats int,
-	tot int,
-	dl int,
-	av_rt real
-);
-
-CREATE TABLE similars (
-	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
-	sim char(10) REFERENCES products(asin) ON DELETE CASCADE,
-	PRIMARY KEY (asin, sim)
-);
-
-CREATE TABLE categories (
-	cid int PRIMARY KEY,
-	descr text,
-	super_id int REFERENCES categories(cid) ON DELETE CASCADE
-);
-
-CREATE TABLE products_categories (
-	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
-	cid int REFERENCES categories(cid) ON DELETE CASCADE,
-	PRIMARY KEY (asin, cid)
-);
-
-CREATE TABLE reviews (
-	rid int PRIMARY KEY,
-	asin char(10) REFERENCES products(asin) ON DELETE CASCADE,
-	day date,
-	uid varchar(14),
-	rating int,
-	votes int,
-	helpful int
-);
-"""
+with open("schema.sql") as f:
+	SQL = f.read()
 tables = re.findall(r"(\w+) \(\n", SQL)
 PK = {table: set() for table in tables}
 TUPS = {table: [] for table in tables}
+
 
 def nextln(count=1) -> str:
 	return re.sub(r"\w+( \w+)?:", "", next(txt), count=count).strip()
