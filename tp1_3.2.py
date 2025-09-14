@@ -70,11 +70,11 @@ os.system("dropdb ecommerce")
 os.system("createdb ecommerce")
 
 with pg.connect(
-        dbname="ecommerce",
-        user="postgres",
-        password="postgres",
-        host="localhost",
-        port="5432"
+    dbname="ecommerce",
+    user="postgres",
+    password="postgres",
+    host="localhost",
+    port="5432"
 ) as conn:
     with conn.cursor() as curs:
         curs.execute(SQL)
