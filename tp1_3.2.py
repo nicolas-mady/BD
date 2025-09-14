@@ -18,12 +18,12 @@ def nextln(count=1) -> str:
 def parse_block():
     next(txt)
     pid = nextln()
-    asin = nextln()
-    PK["products"].add(asin)
+    pasin = nextln()
+    PK["products"].add(pasin)
     title = nextln().replace('"', '""')
 
     if "discontinued" in title:
-        TUPS["products"].append((pid, asin, "", "", "", "", "", "", "", ""))
+        TUPS["products"].append((pid, pasin, "", "", "", "", "", "", "", ""))
         return
 
     grp = nextln()
@@ -31,7 +31,7 @@ def parse_block():
     sims, *asins = nextln().split()
 
     for sim in asins:
-        TUPS["similars"].append((asin, sim))
+        TUPS["similars"].append((pasin, sim))
 
     cats = nextln()
 
@@ -41,18 +41,18 @@ def parse_block():
             if cid not in PK["categories"]:
                 PK["categories"].add(cid)
                 TUPS["categories"].append((cid, descr, super_id))
-            if (asin, cid) not in PK["products_categories"]:
-                PK["products_categories"].add((asin, cid))
-                TUPS["products_categories"].append((asin, cid))
+            if (pasin, cid) not in PK["products_categories"]:
+                PK["products_categories"].add((pasin, cid))
+                TUPS["products_categories"].append((pasin, cid))
             super_id = cid
 
     rev = nextln(0).split()
 
-    TUPS["products"].append((pid, asin, title, grp, srank, sims, cats, *rev))
+    TUPS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
 
     for _ in range(int(rev[1])):
         rid = len(TUPS["reviews"])
-        TUPS["reviews"].append((rid, asin, *nextln(0).split()))
+        TUPS["reviews"].append((rid, pasin, *nextln(0).split()))
 
 
 with open(TXT) as txt:
