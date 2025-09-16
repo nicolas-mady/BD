@@ -15,7 +15,7 @@ def nextln(count=1) -> str:
     return re.sub(r"\w+( \w+)?:", "", next(txt), count=count).strip()
 
 
-def parse_block():
+def process_product() -> None:
     next(txt)
     pid = nextln()
     pasin = nextln()
@@ -48,11 +48,11 @@ def parse_block():
 
     rev = nextln(0).split()
 
-    TUPS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
-
     for _ in range(int(rev[1])):
         rid = len(TUPS["reviews"])
         TUPS["reviews"].append((rid, pasin, *nextln(0).split()))
+
+    TUPS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
 
 
 with open(TXT) as txt:
@@ -60,7 +60,7 @@ with open(TXT) as txt:
         next(txt)
         next(txt)
         while True:
-            parse_block()
+            process_product()
     except StopIteration:
         pass
 
