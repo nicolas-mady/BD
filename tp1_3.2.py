@@ -2,10 +2,12 @@ import os
 import re
 import csv
 import psycopg2 as pg
+import time
+import math
 
 TXT = "amazon-meta.txt"
-with open("schema.sql") as f:
-    SQL = f.read()
+with open("schema.sql") as sql:
+    SQL = sql.read()
 tables = re.findall(r"(\w+) \(\n", SQL)
 PK = {table: set() for table in tables}
 TUPS = {table: [] for table in tables}
@@ -41,10 +43,11 @@ def process_product() -> None:
             if cid not in PK["categories"]:
                 PK["categories"].add(cid)
                 TUPS["categories"].append((cid, descr, super_id))
-            if (pasin, cid) not in PK["products_categories"]:
-                PK["products_categories"].add((pasin, cid))
-                TUPS["products_categories"].append((pasin, cid))
+            # if (pasin, cid) not in PK["products_categories"]:
+            #     PK["products_categories"].add((pasin, cid))
+            #     TUPS["products_categories"].append((pasin, cid))
             super_id = cid
+        TUPS["products_categories"].append((pasin, super_id))
 
     rev = nextln(0).split()
 
@@ -55,10 +58,32 @@ def process_product() -> None:
     TUPS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
 
 
+def get_time() -> str:
+    cur = time.time()
+    total = math.ceil(cur - start)
+    minutes = total // 60
+    seconds = total % 60
+    return f"{minutes}:{seconds:02}"
+
+
+def populate_db() -> None:
+    for table, tups in TUPS.items():
+        print(f"Creating temporary csv {table}...", end="\r")
+        with open(table, "w") as tmp_csv:
+            csv.writer(tmp_csv).writerows(tups)
+        with open(table) as tmp_csv:
+            curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", tmp_csv)
+        print(f"({get_time()}) {len(tups):9,} rows inserted into {table}")
+        os.remove(table)
+
+
+start = time.time()
+
 with open(TXT) as txt:
     try:
         next(txt)
         next(txt)
+        print("Processing products...", end="\r")
         while True:
             process_product()
     except StopIteration:
@@ -78,10 +103,7 @@ with pg.connect(
 ) as conn:
     with conn.cursor() as curs:
         curs.execute(SQL)
-        for table, tups in TUPS.items():
-            with open(table, "w") as f:
-                csv.writer(f).writerows(tups)
-            with open(table) as f:
-                curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", f)
-            os.remove(table)
+        populate_db()
     conn.commit()
+
+print(f"{sum(map(len, TUPS.values())):,} rows affected")
