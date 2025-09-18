@@ -10,7 +10,7 @@ with open("schema.sql") as sql:
     SQL = sql.read()
 tables = re.findall(r"(\w+) \(\n", SQL)
 PK = {table: set() for table in tables}
-TUPS = {table: [] for table in tables}
+ROWS = {table: [] for table in tables}
 
 
 def nextln(count=1) -> str:
@@ -25,7 +25,7 @@ def process_product() -> None:
     title = nextln().replace('"', '""')
 
     if "discontinued" in title:
-        TUPS["products"].append((pid, pasin, "", "", "", "", "", "", "", ""))
+        ROWS["products"].append((pid, pasin, "", "", "", "", "", "", "", ""))
         return
 
     grp = nextln()
@@ -33,7 +33,7 @@ def process_product() -> None:
     sims, *asins = nextln().split()
 
     for sim in asins:
-        TUPS["similars"].append((pasin, sim))
+        ROWS["similars"].append((pasin, sim))
 
     cats = nextln()
 
@@ -42,20 +42,20 @@ def process_product() -> None:
         for descr, cid in re.findall(r"\|([^\[]*)\[(\d+)\]", next(txt)):
             if cid not in PK["categories"]:
                 PK["categories"].add(cid)
-                TUPS["categories"].append((cid, descr, super_id))
+                ROWS["categories"].append((cid, descr, super_id))
             # if (pasin, cid) not in PK["products_categories"]:
             #     PK["products_categories"].add((pasin, cid))
             #     TUPS["products_categories"].append((pasin, cid))
             super_id = cid
-        TUPS["products_categories"].append((pasin, super_id))
+        ROWS["products_categories"].append((pasin, super_id))
 
     rev = nextln(0).split()
 
     for _ in range(int(rev[1])):
-        rid = len(TUPS["reviews"])
-        TUPS["reviews"].append((rid, pasin, *nextln(0).split()))
+        rid = len(ROWS["reviews"])
+        ROWS["reviews"].append((rid, pasin, *nextln(0).split()))
 
-    TUPS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
+    ROWS["products"].append((pid, pasin, title, grp, srank, sims, cats, *rev))
 
 
 def get_time() -> str:
@@ -67,13 +67,13 @@ def get_time() -> str:
 
 
 def populate_db() -> None:
-    for table, tups in TUPS.items():
+    for table, rows in ROWS.items():
         print(f"Creating temporary csv {table}...", end="\r")
         with open(table, "w") as tmp_csv:
-            csv.writer(tmp_csv).writerows(tups)
+            csv.writer(tmp_csv).writerows(rows)
         with open(table) as tmp_csv:
             curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", tmp_csv)
-        print(f"({get_time()}) {len(tups):9,} rows inserted into {table}")
+        print(f"({get_time()}) {len(rows):9,} rows inserted into {table}")
         os.remove(table)
 
 
@@ -89,10 +89,7 @@ with open(TXT) as txt:
     except StopIteration:
         pass
 
-TUPS["similars"] = [t for t in TUPS["similars"] if t[1] in PK["products"]]
-
-os.system("dropdb ecommerce")
-os.system("createdb ecommerce")
+ROWS["similars"] = [t for t in ROWS["similars"] if t[1] in PK["products"]]
 
 with pg.connect(
     dbname="ecommerce",
@@ -106,4 +103,4 @@ with pg.connect(
         populate_db()
     conn.commit()
 
-print(f"{sum(map(len, TUPS.values())):,} rows affected")
+print(f"{sum(map(len, ROWS.values())):,} rows affected")
