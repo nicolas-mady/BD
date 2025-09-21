@@ -13,8 +13,8 @@ PK = {table: set() for table in tables}
 ROWS = {table: [] for table in tables}
 
 
-def nextln(count=1) -> str:
-    return re.sub(r"\w+( \w+)?:", "", next(txt), count=count).strip()
+def nextln(n: int = 1) -> str:
+    return re.sub(r"\w+( \w+)?:", "", next(txt), count=n).strip()
 
 
 def process_product() -> None:
@@ -25,7 +25,7 @@ def process_product() -> None:
     title = nextln().replace('"', '""')
 
     if "discontinued" in title:
-        ROWS["products"].append((pid, pasin, "", "", "", "", "", "", "", ""))
+        ROWS["products"].append((pid, pasin, *[""]*8))
         return
 
     grp = nextln()
@@ -60,21 +60,28 @@ def process_product() -> None:
 
 def get_time() -> str:
     cur = time.time()
-    total = math.ceil(cur - start)
-    minutes = total // 60
-    seconds = total % 60
-    return f"{minutes}:{seconds:02}"
+    sec = math.ceil(cur - start)
+    return f"{sec // 60}:{sec % 60:02}"
 
 
-def populate_db() -> None:
+def populate_db() -> tuple[int, int]:
+    total = inserted = 0
+
     for table, rows in ROWS.items():
         print(f"Creating temporary csv {table}...", end="\r")
+
         with open(table, "w") as tmp_csv:
             csv.writer(tmp_csv).writerows(rows)
+
         with open(table) as tmp_csv:
             curs.copy_expert(f"COPY {table} FROM STDIN WITH CSV", tmp_csv)
-        print(f"({get_time()}) {len(rows):9,} rows inserted into {table}")
+
+        print(f"({get_time()}) {curs.rowcount:9,} / {len(rows):<9,} rows inserted into {table}")
+        total += len(rows)
+        inserted += curs.rowcount
         os.remove(table)
+
+    return total, inserted
 
 
 start = time.time()
@@ -100,7 +107,6 @@ with pg.connect(
 ) as conn:
     with conn.cursor() as curs:
         curs.execute(SQL)
-        populate_db()
+        total, inserted = populate_db()
+        print(f"{inserted:,} / {total:,} rows processed")
     conn.commit()
-
-print(f"{sum(map(len, ROWS.values())):,} rows affected")
