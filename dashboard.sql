@@ -18,6 +18,7 @@ e os 5 comentários mais úteis e com menor avaliação.
 -- ORDER BY rating ASC, helpful DESC
 -- LIMIT 5;
 
+-------------------------------------------------------------------------------
 
 -- SELECT DISTINCT p1.pasin
 -- FROM similars s1
@@ -35,6 +36,7 @@ e os 5 comentários mais úteis e com menor avaliação.
 -- JOIN products p2 ON s.sim = p2.pasin
 -- WHERE s.pasin = '0001053736' AND p1.srank < p2.srank;
 
+-------------------------------------------------------------------------------
 
 -- SELECT *
 -- FROM products
@@ -50,6 +52,7 @@ longo do período coberto no arquivo.
 -- WHERE pasin = '0807220280'
 -- GROUP BY rdate;
 
+-------------------------------------------------------------------------------
 
 /* 4. Listar os 10 produtos líderes de venda em cada grupo de produtos. */
 -- SELECT *
@@ -57,6 +60,8 @@ longo do período coberto no arquivo.
 -- WHERE srank IS NOT NULL
 -- ORDER BY grp, srank
 -- LIMIT 100;
+
+-------------------------------------------------------------------------------
 
 /* 5. Listar os 10 produtos com a maior média de avaliações úteis positivas
 por produto.
@@ -68,12 +73,18 @@ WHERE av_rt >= 4 AND votes > 0
 ORDER BY helpful / votes DESC
 LIMIT 10;
 
+-------------------------------------------------------------------------------
 
 /* 6. Listar as 5 categorias com a maior média de avaliações úteis positivas
 por produto.
  */
--- SELECT pasin, AVG(positive) AS avg_positive FROM reviews GROUP BY pasin ORDER BY avg_positive DESC LIMIT 10;
+-- SELECT pasin, AVG(positive) AS avg_positive
+-- FROM reviews
+-- GROUP BY pasin
+-- ORDER BY avg_positive DESC
+-- LIMIT 10;
 
+-------------------------------------------------------------------------------
 
 /* 7. Listar os 10 clientes que mais fizeram comentários por grupo de produto.
  */

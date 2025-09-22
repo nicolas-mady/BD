@@ -76,7 +76,8 @@ def populate_db() -> tuple[int, int]:
         with open(table) as tmp_csv:
             curs.copy_expert(f'COPY {table} FROM STDIN WITH CSV', tmp_csv)
 
-        print(f'({get_time()}) {curs.rowcount:9,} / {len(rows):<9,} rows inserted into {table}')
+        frac = f'{curs.rowcount:9,} / {len(rows):<9,}'
+        print(f'({get_time()}) {frac} rows inserted into {table}')
         total += len(rows)
         inserted += curs.rowcount
         os.remove(table)
@@ -106,6 +107,7 @@ with pg.connect(
     port='5432'
 ) as conn:
     with conn.cursor() as curs:
+        print('Creating tables...')
         curs.execute(SQL)
         total, inserted = populate_db()
         print(f'{inserted:,} / {total:,} rows processed')
