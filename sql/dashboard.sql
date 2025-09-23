@@ -87,18 +87,22 @@ com a maior média de avaliações úteis positivas por produto.
 6. Listar as 5 categorias
 com a maior média de avaliações úteis positivas por produto.
  */
--- SELECT *
--- FROM reviews
--- -- WHERE helpful = (SELECT MAX(helpful) FROM reviews)
--- -- WHERE votes > 0 AND (helpful / votes) > 0.5 AND rating > 3
--- -- GROUP BY pasin
--- ORDER BY votes DESC
+-- SELECT c.descr AS categoria,
+--        COUNT(DISTINCT p.pasin) AS total_produtos,
+--        AVG(r.rating) AS media_rating,
+--        AVG(CAST(r.helpful AS FLOAT) / NULLIF(r.votes, 0)) AS media_helpful_ratio,
+--        COUNT(r.pasin) AS total_reviews_positivas
+-- FROM categories c
+-- JOIN products_categories pc ON c.cid = pc.cid
+-- JOIN products p ON pc.pasin = p.pasin
+-- JOIN reviews r ON p.pasin = r.pasin
+-- WHERE r.rating >= 4
+--     AND r.votes > 0
+-- GROUP BY c.cid,
+--          c.descr
+-- HAVING COUNT(DISTINCT p.pasin) >= 5 -- Pelo menos 5 produtos na categoria
+-- ORDER BY AVG(CAST(r.helpful AS FLOAT) / NULLIF(r.votes, 0)) DESC, AVG(r.rating) DESC
 -- LIMIT 5;
--- SELECT pasin, AVG(rating) AS avg_rating
--- FROM reviews
--- GROUP BY pasin
--- ORDER BY avg_rating DESC
--- LIMIT 10;
 -- ############################################################################
 /* 7. Listar os 10 clientes que mais fizeram comentários por grupo de produto.
  */
