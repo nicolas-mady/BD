@@ -66,23 +66,23 @@ longo do período coberto no arquivo.
 /* 5. Listar os 10 produtos com a maior média de avaliações úteis positivas
 por produto.
  */
-SELECT products.*
-FROM products
-NATURAL JOIN reviews
-WHERE av_rt >= 4 AND votes > 0
-ORDER BY helpful / votes DESC
-LIMIT 10;
+-- SELECT products.*
+-- FROM products
+-- NATURAL JOIN reviews
+-- WHERE av_rt >= 4 AND votes > 0
+-- ORDER BY helpful / votes DESC
+-- LIMIT 10;
 
 -------------------------------------------------------------------------------
 
 /* 6. Listar as 5 categorias com a maior média de avaliações úteis positivas
 por produto.
  */
--- SELECT pasin, AVG(positive) AS avg_positive
--- FROM reviews
--- GROUP BY pasin
--- ORDER BY avg_positive DESC
--- LIMIT 10;
+SELECT pasin, AVG(positive) AS avg_positive
+FROM reviews
+GROUP BY pasin
+ORDER BY avg_positive DESC
+LIMIT 10;
 
 -------------------------------------------------------------------------------
 

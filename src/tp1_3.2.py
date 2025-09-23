@@ -5,8 +5,8 @@ import psycopg2 as pg
 import time
 import math
 
-TXT = 'amazon-meta.txt'
-with open('schema.sql') as sql:
+TXT = '../data/snap_amazon.txt'
+with open('../sql/schema.sql') as sql:
     SQL = sql.read()
 tables = re.findall(r'(\w+) \(\n', SQL)
 PK = {table: set() for table in tables}
