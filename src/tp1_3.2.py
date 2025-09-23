@@ -6,9 +6,9 @@ import time
 import math
 
 TXT = '../data/amazon-meta.txt'
-with open('../sql/schema.sql') as sql:
-    SQL = sql.read()
-tables = re.findall(r'(\w+) \(\n', SQL)
+with open('../sql/schema.sql') as f:
+    SCHEMA = f.read()
+tables = re.findall(r'(\w+) \(\n', SCHEMA)
 PK = {table: set() for table in tables}
 ROWS = {table: [] for table in tables}
 
@@ -18,7 +18,6 @@ def nextln(n: int = 1) -> str:
 
 
 def process_product() -> None:
-    next(txt)
     pid = nextln()
     pasin = nextln()
     PK['products'].add(pasin)
@@ -70,11 +69,11 @@ def populate_db() -> tuple[int, int]:
     for table, rows in ROWS.items():
         print(f'Creating temporary csv {table}...', end='\r')
 
-        with open(table, 'w') as csvf:
-            csv.writer(csvf).writerows(rows)
+        with open(table, 'w') as f:
+            csv.writer(f).writerows(rows)
 
-        with open(table) as csvf:
-            curs.copy_expert(f'COPY {table} FROM STDIN WITH CSV', csvf)
+        with open(table) as f:
+            curs.copy_expert(f'COPY {table} FROM STDIN WITH CSV', f)
 
         frac = f'{curs.rowcount:9,} / {len(rows):<9,}'
         print(f'({get_time()}) {frac} rows inserted into {table}')
@@ -89,10 +88,10 @@ start = time.time()
 
 with open(TXT) as txt:
     try:
-        next(txt)
-        next(txt)
         print('Processing products...', end='\r')
         while True:
+            while next(txt).strip():
+                continue
             process_product()
     except StopIteration:
         pass
@@ -107,7 +106,7 @@ with pg.connect(
     port='5432'
 ) as conn:
     with conn.cursor() as curs:
-        curs.execute(SQL)
+        curs.execute(SCHEMA)
         total, inserted = populate_db()
         print(f'{inserted:,} / {total:,} rows processed')
     conn.commit()
