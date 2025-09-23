@@ -5,7 +5,7 @@ import psycopg2 as pg
 import time
 import math
 
-TXT = '../data/snap_amazon.txt'
+TXT = '../data/amazon-meta.txt'
 with open('../sql/schema.sql') as sql:
     SQL = sql.read()
 tables = re.findall(r'(\w+) \(\n', SQL)
@@ -70,11 +70,11 @@ def populate_db() -> tuple[int, int]:
     for table, rows in ROWS.items():
         print(f'Creating temporary csv {table}...', end='\r')
 
-        with open(table, 'w') as tmp_csv:
-            csv.writer(tmp_csv).writerows(rows)
+        with open(table, 'w') as csvf:
+            csv.writer(csvf).writerows(rows)
 
-        with open(table) as tmp_csv:
-            curs.copy_expert(f'COPY {table} FROM STDIN WITH CSV', tmp_csv)
+        with open(table) as csvf:
+            curs.copy_expert(f'COPY {table} FROM STDIN WITH CSV', csvf)
 
         frac = f'{curs.rowcount:9,} / {len(rows):<9,}'
         print(f'({get_time()}) {frac} rows inserted into {table}')
@@ -107,7 +107,6 @@ with pg.connect(
     port='5432'
 ) as conn:
     with conn.cursor() as curs:
-        print('Creating tables...')
         curs.execute(SQL)
         total, inserted = populate_db()
         print(f'{inserted:,} / {total:,} rows processed')
