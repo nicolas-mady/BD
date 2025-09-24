@@ -50,14 +50,20 @@
 -- NATURAL LEFT JOIN prod_dates
 -- ORDER BY rdate;
 -- ---------------------------------------------------------------------------
-SELECT *
-FROM
-    (SELECT *,
-            ROW_NUMBER() OVER (PARTITION BY grp
-                               ORDER BY srank) AS rn
-     FROM products
-     WHERE srank IS NOT NULL AND srank > 0) ranked
-WHERE rn <= 10;
+-- SELECT *
+-- FROM (
+--     SELECT
+--         *,
+--         ROW_NUMBER() OVER (
+--             PARTITION BY grp
+--             ORDER BY srank
+--         ) AS rn
+--      FROM products
+--      WHERE
+--         srank IS NOT NULL
+--         AND srank > 0
+-- )
+-- WHERE rn <= 10;
 -- ############################################################################
 /*
 5. Listar os 10 produtos
