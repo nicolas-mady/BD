@@ -58,13 +58,13 @@ def process_product() -> None:
 
 
 def get_time() -> str:
-    cur = time.time()
-    sec = math.ceil(cur - start)
-    return f'{sec // 60}:{sec % 60:02}'
+    cur_time = time.time()
+    seconds = math.ceil(cur_time - start)
+    return f'{seconds // 60}:{seconds % 60:02}'
 
 
-def populate_db() -> tuple[int, int]:
-    total = inserted = 0
+def populate_db(curs) -> tuple[int, int]:
+    inserted = total = 0
 
     for table, rows in ROWS.items():
         print(f'Creating temporary csv {table}...', end='\r')
@@ -81,7 +81,7 @@ def populate_db() -> tuple[int, int]:
         inserted += curs.rowcount
         os.remove(table)
 
-    return total, inserted
+    return inserted, total
 
 
 start = time.time()
@@ -107,6 +107,6 @@ with pg.connect(
 ) as conn:
     with conn.cursor() as curs:
         curs.execute(SCHEMA)
-        total, inserted = populate_db()
+        inserted, total = populate_db(curs)
         print(f'{inserted:,} / {total:,} rows processed')
     conn.commit()
