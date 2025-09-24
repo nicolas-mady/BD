@@ -1,5 +1,6 @@
 /* 4. Listar os 10 produtos líderes de venda em cada grupo de produtos.
  */
+
 SELECT *
 FROM (
     SELECT

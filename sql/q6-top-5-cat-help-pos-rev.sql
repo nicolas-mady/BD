@@ -2,6 +2,7 @@
 6. Listar as 5 categorias
 com a maior média de avaliações úteis positivas por produto.
  */
+
 -- WITH avg_per_product AS (
 --     SELECT p.pasin,
 --            AVG(r.helpful) AS avg_helpful

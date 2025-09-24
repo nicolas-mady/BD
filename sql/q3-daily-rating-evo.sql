@@ -1,5 +1,6 @@
 /* 3. Dado um produto, mostrar a evolução diária das médias de avaliação ao longo do período coberto no arquivo.
  */
+
 WITH date_range AS ( -- datas de início e fim do produto
     SELECT
         MIN(rdate) AS start_date,

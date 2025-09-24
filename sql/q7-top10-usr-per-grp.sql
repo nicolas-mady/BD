@@ -1,5 +1,6 @@
 /* 7. Listar os 10 clientes que mais fizeram comentários por grupo de produto.
  */
+
 SELECT *
 FROM (
     SELECT

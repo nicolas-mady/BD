@@ -1,13 +1,13 @@
 /* Dado um produto, listar os 5 comentários mais úteis e com maior avaliação e os 5 comentários mais úteis e com menor avaliação.
  */
 
-SELECT *
+SELECT rid, rdate, usr_id, rating, helpful
 FROM reviews
 WHERE pasin = '0195110382'
 ORDER BY rating DESC, helpful DESC
 LIMIT 5;
 
-SELECT *
+SELECT rid, rdate, usr_id, rating, helpful
 FROM reviews
 WHERE pasin = '0195110382'
 ORDER BY rating, helpful DESC
