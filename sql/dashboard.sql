@@ -15,64 +15,49 @@
 -- JOIN products p2 ON s.sim = p2.pasin
 -- WHERE s.pasin = '0001053736' AND p1.srank > p2.srank;
 -- ---------------------------------------------------------------------------
--- WITH date_range AS (
---     -- datas de início e fim do produto
---     SELECT MIN(rdate) AS start_date,
---            MAX(rdate) AS end_date
+-- SELECT rdate, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS num_reviews
+-- FROM reviews
+-- WHERE pasin = '0807220280'
+-- GROUP BY rdate;
+-- ---------------------------------------------------------------------------
+-- WITH date_range AS ( -- datas de início e fim do produto
+--     SELECT
+--         MIN(rdate) AS start_date,
+--         MAX(rdate) AS end_date
 --     FROM reviews
 --     WHERE pasin = '0807220280'
 -- ),
--- series AS (
---     -- gera todas as datas no intervalo
+-- all_dates AS ( -- gera todas as datas no intervalo
 --     SELECT generate_series(
 --                (SELECT start_date FROM date_range),
 --                (SELECT end_date FROM date_range),
 --                interval '1 day'
 --            )::date AS rdate
 -- ),
--- daily_avg AS (
---     -- média diária real (somente dias com review)
+-- prod_dates AS ( -- média diária real (somente dias com review)
 --     SELECT rdate,
---            AVG(rating)::numeric(3,2) AS avg_rating
+--            ROUND(AVG(rating), 2) AS avg_rating,
+--            COUNT(*) AS num_reviews
 --     FROM reviews
 --     WHERE pasin = '0807220280'
 --     GROUP BY rdate
--- ),
--- joined AS (
---     -- junta todas as datas com as médias existentes
---     SELECT s.rdate,
---            d.avg_rating
---     FROM series s
---     LEFT JOIN daily_avg d ON s.rdate = d.rdate
--- ),
--- filled AS (
---     -- preenche valores faltantes com a última média conhecida
---     SELECT rdate,
---            COALESCE(
---                avg_rating,
---                LAG(avg_rating) OVER (ORDER BY rdate)
---            ) AS avg_rating
---     FROM joined
 -- )
--- SELECT *
--- FROM filled
+-- SELECT -- preenche valores faltantes com zero
+--     rdate,
+--     COALESCE(avg_rating, 0) AS avg_rating,
+--     COALESCE(num_reviews, 0) AS num_reviews
+-- FROM all_dates
+-- NATURAL LEFT JOIN prod_dates
 -- ORDER BY rdate;
---- ---------------------------------------------------------------------------
-SELECT rdate, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS num_reviews
-FROM reviews
-WHERE pasin = '0807220280'
-GROUP BY rdate;
--- ############################################################################
-/* 4. Listar os 10 produtos líderes de venda em cada grupo de produtos.
- */
--- SELECT *
--- FROM
---     (SELECT *,
---             ROW_NUMBER() OVER (PARTITION BY grp
---                                ORDER BY srank DESC) AS rn
---      FROM products
---      WHERE srank IS NOT NULL ) ranked
--- WHERE rn <= 10;
+-- ---------------------------------------------------------------------------
+SELECT *
+FROM
+    (SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY grp
+                               ORDER BY srank) AS rn
+     FROM products
+     WHERE srank IS NOT NULL AND srank > 0) ranked
+WHERE rn <= 10;
 -- ############################################################################
 /*
 5. Listar os 10 produtos
