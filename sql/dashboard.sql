@@ -71,11 +71,14 @@
 -- SELECT *
 -- FROM (
 --     SELECT
---         *,
+--         pasin,
+--         title,
 --         ROW_NUMBER() OVER (
 --             PARTITION BY grp
 --             ORDER BY srank
---         ) AS rnk
+--         ) AS rnk,
+--         grp,
+--         srank
 --      FROM products
 --      WHERE
 --         srank IS NOT NULL
@@ -146,8 +149,11 @@ com a maior média de avaliações úteis positivas por produto.
 -- FROM (
 --     SELECT
 --         usr_id,
---         grp "group",
---         row_number() OVER (PARTITION BY grp ORDER BY COUNT(*) DESC) AS rnk,
+--         row_number() OVER (
+--             PARTITION BY grp
+--             ORDER BY COUNT(*) DESC
+--         ) AS rnk,
+--         grp,
 --         COUNT(*) AS num_reviews
 --     FROM reviews
 --     NATURAL JOIN products
