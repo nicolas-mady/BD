@@ -11,8 +11,8 @@ FROM (
         ) AS rnk,
         grp,
         srank
-     FROM products
-     WHERE
+    FROM products
+    WHERE
         srank IS NOT NULL
         AND srank > 0
 )

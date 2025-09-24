@@ -4,7 +4,7 @@ SELECT *
 FROM (
     SELECT
         usr_id,
-        row_number() OVER (
+        ROW_NUMBER() OVER (
             PARTITION BY grp
             ORDER BY COUNT(*) DESC
         ) AS rnk,
