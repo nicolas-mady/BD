@@ -1,51 +1,67 @@
-/* 1. Dado um produto, listar os 5 comentários mais úteis e com maior avaliação
-e os 5 comentários mais úteis e com menor avaliação.
- */
--- SELECT pasin FROM products WHERE dl = 10 LIMIT 1;
--- SELECT * FROM reviews WHERE pasin = '0195110382';
--- ----------------------------------------------------------------------------
--- SELECT reviews.*
+-- SELECT *
 -- FROM reviews
--- NATURAL JOIN products
 -- WHERE pasin = '0195110382'
 -- ORDER BY rating DESC, helpful DESC
 -- LIMIT 5;
--- SELECT reviews.*
--- FROM reviews
--- NATURAL JOIN products
--- WHERE pasin = '0195110382'
--- ORDER BY rating ASC, helpful DESC
--- LIMIT 5;
--- ############################################################################
-/* 2. Dado um produto, listar os produtos similares com maiores vendas
-(melhor srank) do que ele.
- */
--- SELECT DISTINCT p1.pasin
--- FROM similars s1
--- NATURAL JOIN products p1
--- JOIN products p2 ON s1.sim = p2.pasin
--- WHERE p1.srank < p2.srank
--- LIMIT 5;
--- ----------------------------------------------------------------------------
--- SELECT p2.*
--- FROM similars s
--- NATURAL JOIN products p1
--- JOIN products p2 ON s.sim = p2.pasin
--- WHERE s.pasin = '0001053736' AND p1.srank < p2.srank;
--- ############################################################################
-/* 3. Dado um produto, mostrar a evolução diária das médias de avaliação ao
-longo do período coberto no arquivo.
- */
 -- SELECT *
--- FROM products
--- -- WHERE pasin = '0807220280'
--- ORDER BY dl DESC NULLS LAST
--- LIMIT 1;
--- ----------------------------------------------------------------------------
--- SELECT rdate, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS num_reviews
 -- FROM reviews
--- WHERE pasin = '0807220280'
--- GROUP BY rdate;
+-- WHERE pasin = '0195110382'
+-- ORDER BY rating, helpful DESC
+-- LIMIT 5;
+-- ---------------------------------------------------------------------------
+-- SELECT p2.pasin, p2.title, p2.srank
+-- FROM products p1
+-- NATURAL JOIN similars s
+-- JOIN products p2 ON s.sim = p2.pasin
+-- WHERE s.pasin = '0001053736' AND p1.srank > p2.srank;
+-- ---------------------------------------------------------------------------
+-- WITH date_range AS (
+--     -- datas de início e fim do produto
+--     SELECT MIN(rdate) AS start_date,
+--            MAX(rdate) AS end_date
+--     FROM reviews
+--     WHERE pasin = '0807220280'
+-- ),
+-- series AS (
+--     -- gera todas as datas no intervalo
+--     SELECT generate_series(
+--                (SELECT start_date FROM date_range),
+--                (SELECT end_date FROM date_range),
+--                interval '1 day'
+--            )::date AS rdate
+-- ),
+-- daily_avg AS (
+--     -- média diária real (somente dias com review)
+--     SELECT rdate,
+--            AVG(rating)::numeric(3,2) AS avg_rating
+--     FROM reviews
+--     WHERE pasin = '0807220280'
+--     GROUP BY rdate
+-- ),
+-- joined AS (
+--     -- junta todas as datas com as médias existentes
+--     SELECT s.rdate,
+--            d.avg_rating
+--     FROM series s
+--     LEFT JOIN daily_avg d ON s.rdate = d.rdate
+-- ),
+-- filled AS (
+--     -- preenche valores faltantes com a última média conhecida
+--     SELECT rdate,
+--            COALESCE(
+--                avg_rating,
+--                LAG(avg_rating) OVER (ORDER BY rdate)
+--            ) AS avg_rating
+--     FROM joined
+-- )
+-- SELECT *
+-- FROM filled
+-- ORDER BY rdate;
+--- ---------------------------------------------------------------------------
+SELECT rdate, ROUND(AVG(rating), 2) AS avg_rating, COUNT(*) AS num_reviews
+FROM reviews
+WHERE pasin = '0807220280'
+GROUP BY rdate;
 -- ############################################################################
 /* 4. Listar os 10 produtos líderes de venda em cada grupo de produtos.
  */
@@ -87,29 +103,55 @@ com a maior média de avaliações úteis positivas por produto.
 6. Listar as 5 categorias
 com a maior média de avaliações úteis positivas por produto.
  */
--- SELECT c.descr AS categoria,
---        COUNT(DISTINCT p.pasin) AS total_produtos,
---        AVG(r.rating) AS media_rating,
---        AVG(CAST(r.helpful AS FLOAT) / NULLIF(r.votes, 0)) AS media_helpful_ratio,
---        COUNT(r.pasin) AS total_reviews_positivas
--- FROM categories c
--- JOIN products_categories pc ON c.cid = pc.cid
--- JOIN products p ON pc.pasin = p.pasin
--- JOIN reviews r ON p.pasin = r.pasin
--- WHERE r.rating >= 4
---     AND r.votes > 0
--- GROUP BY c.cid,
---          c.descr
--- HAVING COUNT(DISTINCT p.pasin) >= 5 -- Pelo menos 5 produtos na categoria
--- ORDER BY AVG(CAST(r.helpful AS FLOAT) / NULLIF(r.votes, 0)) DESC, AVG(r.rating) DESC
+-- WITH avg_per_product AS (
+--     SELECT p.pasin,
+--            AVG(r.helpful) AS avg_helpful
+--     FROM products p
+--     JOIN reviews r ON p.pasin = r.pasin
+--     GROUP BY p.pasin
+-- ),
+-- avg_per_category AS (
+--     SELECT c.cid,
+--            c.descr,
+--            AVG(ap.avg_helpful) AS avg_helpful_per_product
+--     FROM avg_per_product ap
+--     JOIN products_categories pc ON ap.pasin = pc.pasin
+--     JOIN categories c ON pc.cid = c.cid
+--     GROUP BY c.cid, c.descr
+-- )
+-- SELECT cid, descr, avg_helpful_per_product
+-- FROM avg_per_category
+-- ORDER BY avg_helpful_per_product DESC
 -- LIMIT 5;
--- ############################################################################
+-- ----------------------------------------------------------------------------
+-- SELECT cid, descr
+-- FROM categories
+-- NATURAL JOIN products_categories
+-- NATURAL JOIN reviews
+-- WHERE votes > 0 AND rating > 3
+-- GROUP BY cid, descr
+-- ORDER BY AVG(CAST(helpful AS FLOAT) / votes) DESC, AVG(rating) DESC
+-- LIMIT 5;
+--- ---------------------------------------------------------------------------
 /* 7. Listar os 10 clientes que mais fizeram comentários por grupo de produto.
  */
--- SELECT p.grp, AVG(r.rating) AS avg_rating FROM reviews r
--- JOIN products p ON r.pasin = p.pasin
--- GROUP BY p.grp ORDER BY avg_rating DESC LIMIT 5;
--- SELECT r.userid, COUNT(*) AS num_reviews FROM reviews r
--- JOIN products p ON r.pasin = p.pasin
--- WHERE p.grp = 'Book'
--- GROUP BY r.userid ORDER BY num_reviews DESC LIMIT 10;
+-- SELECT *
+-- FROM (
+--     SELECT
+--         usr_id,
+--         grp,
+--         row_number() OVER (PARTITION BY grp ORDER BY COUNT(*) DESC) AS rnk,
+--         COUNT(*) AS num_reviews
+--     FROM reviews
+--     NATURAL JOIN products
+--     GROUP BY usr_id, grp
+-- )
+-- WHERE rnk <= 10;
+
+
+-- SELECT *
+-- FROM (
+--     SELECT MIN(rdate) AS start_date,
+--            MAX(rdate) AS end_date
+--     FROM reviews
+-- ) AS date_range;
