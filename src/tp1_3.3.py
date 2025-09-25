@@ -1,8 +1,34 @@
+import argparse
 import os
 import re
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine
+
+load_dotenv()
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='PostgreSQL database dashboard for Amazon data analysis')
+    parser.add_argument('--db-host', default=os.getenv('PG_HOST', 'localhost'), 
+                       help='Database host (default: localhost)')
+    parser.add_argument('--db-port', default=os.getenv('PG_PORT', '5432'), 
+                       help='Database port (default: 5432)')
+    parser.add_argument('--db-name', default=os.getenv('PG_DB', 'ecommerce'), 
+                       help='Database name (default: ecommerce)')
+    parser.add_argument('--db-user', default=os.getenv('PG_USER', 'postgres'), 
+                       help='Database user (default: postgres)')
+    parser.add_argument('--db-pass', default=os.getenv('PG_PASSWORD', 'postgres'), 
+                       help='Database password (default: postgres)')
+    parser.add_argument('--product-asin', default='0807220280',
+                       help='Product ASIN for queries that require a specific product (default: 0807220280)')
+    parser.add_argument('--output', default='/out/out',
+                       help='Output directory for CSV files and reports (default: /out)')
+    return parser.parse_args()
+
+args = parse_arguments()
+
+if not os.path.exists(args.output):
+    os.makedirs(args.output)
 
 MENU = '''
 0. Sair
@@ -17,36 +43,62 @@ MENU = '''
 
 
 def main():
-    usr = os.getenv('PG_USER', 'postgres')
-    pwd = os.getenv('PG_PASSWORD', 'postgres')
-    host = os.getenv('PG_HOST', 'localhost')
-    port = os.getenv('PG_PORT', '5432')
-    db = os.getenv('PG_DB', 'ecommerce')
-    db_url = f"postgresql://{usr}:{pwd}@{host}:{port}/{db}"
+    db_url = f"postgresql://{args.db_user}:{args.db_pass}@{args.db_host}:{args.db_port}/{args.db_name}"
     engine = create_engine(db_url)
 
-    *sqls, _ = sorted(os.listdir('../sql'))
-    stmts = [open(f'../sql/{f}').read() for f in sqls]
+    sql_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sql')
+    sql_files = [f for f in sorted(os.listdir(sql_dir)) if f.startswith('q') and f.endswith('.sql')]
+    stmts = [open(os.path.join(sql_dir, f)).read() for f in sql_files]
 
     print(MENU)
     while True:
         try:
-            opt = int(input('\nEscolha uma opção:\n'))
+            opt = int(input('\nChoose an option:\n'))
         except ValueError:
-            print("Por favor, insira um número válido.")
+            print("Please enter a valid number.")
             continue
         if opt == 0:
             break
         if 1 <= opt <= 7:
             stmt = stmts[opt - 1]
+            
+            query_titles = [
+                "Top 5 comentários mais úteis (maior e menor avaliação)",
+                "Produtos similares com maiores vendas",
+                "Evolução diária das médias de avaliação",
+                "10 produtos líderes de venda por grupo",
+                "10 produtos com maior média de avaliações úteis positivas",
+                "5 categorias com maior média de avaliações úteis positivas",
+                "10 clientes que mais fizeram comentários por grupo"
+            ]
+
             if opt <= 3:
-                pasin = '0807220280'
-                stmt = re.sub(r"pasin = '\w*'", f"pasin = '{pasin}'", stmt)
-            print(pd.read_sql(stmt, engine))
+                stmt = re.sub(r"pasin = '\w*'", f"pasin = '{args.product_asin}'", stmt)
+
+            print(f"\n=== {query_titles[opt-1]} ===")
+
+            df = pd.read_sql(stmt, engine)
+
+            print(f"Total registers: {len(df)}")
+            print("\nResults:")
+            print(df.to_string(index=False))
+
+            csv_filenames = [
+                "q1-top5-helpful-reviews.csv",
+                "q2-best-srank.csv", 
+                "q3-daily-rating-evo.csv",
+                "q4-top10-sales-per-group.csv",
+                "q5-top10-prods-help-pos-rev.csv",
+                "q6-top-5-cat-help-pos-rev.csv",
+                "q7-top10-usr-per-grp.csv"
+            ]
+
+            csv_path = os.path.join(args.output, csv_filenames[opt-1])
+            df.to_csv(csv_path, index=False)
+            print(f"\nResults saved in: {csv_path}")
         else:
-            print('Opção inválida! Tente novamente.')
+            print('Invalid option! Please try again.')
 
 
 if __name__ == '__main__':
-    load_dotenv()
     main()
