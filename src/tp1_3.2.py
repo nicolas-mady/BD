@@ -1,8 +1,9 @@
+import csv
+import math
+import multiprocessing as mp
 import os
 import re
-import csv
 import time
-import math
 from dotenv import load_dotenv
 import psycopg2 as pg
 
@@ -47,9 +48,6 @@ def process_product() -> None:
             if cid not in PK['categories']:
                 PK['categories'].add(cid)
                 ROWS['categories'].append((cid, descr, super_id))
-            # if (pasin, cid) not in PK['products_categories']:
-            #     PK['products_categories'].add((pasin, cid))
-            #     TUPS['products_categories'].append((pasin, cid))
             super_id = cid
         ROWS['products_categories'].append((pasin, super_id))
 
