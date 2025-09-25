@@ -8,7 +8,7 @@ import psycopg2 as pg
 
 load_dotenv()
 
-TXT = '../data/amazon-meta.txt'
+TXT = '../data/snap_amazon.txt'
 with open('../sql/schema.sql') as f:
     SCHEMA = f.read()
 tables = re.findall(r'(\w+) \(\n', SCHEMA)
