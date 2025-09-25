@@ -3,11 +3,27 @@
 com a maior média de avaliações úteis positivas por produto.
  */
 
-SELECT cid, descr, AVG(helpful) AS avg_helpful, COUNT(*) as n_products
-FROM categories
-NATURAL JOIN products_categories
-NATURAL JOIN reviews
-WHERE helpful > 0 AND rating > 3
-GROUP BY cid, descr
-ORDER BY avg_helpful DESC
-;
+WITH A AS (
+    SELECT cid, descr, COUNT(*) as n_products
+    FROM categories
+    NATURAL JOIN products_categories
+    GROUP BY cid
+),
+B AS (
+    SELECT cid, descr, COUNT(*) as n_pos_helpful
+    FROM categories
+    NATURAL JOIN products_categories
+    NATURAL JOIN reviews
+    WHERE helpful > 0 AND rating > 3
+    GROUP BY cid
+)
+SELECT
+    cid,
+    descr,
+    CAST(n_pos_helpful AS FLOAT) / n_products AS avg_pos_helpful,
+    n_pos_helpful,
+    n_products
+FROM B
+NATURAL JOIN A
+ORDER BY avg_pos_helpful DESC
+LIMIT 5;
