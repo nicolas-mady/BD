@@ -20,7 +20,7 @@ B AS (
 SELECT
     cid,
     descr,
-    CAST(n_pos_helpful AS FLOAT) / n_products AS avg_pos_helpful,
+    ROUND(CAST(n_pos_helpful AS NUMERIC) / n_products, 2) AS avg_pos_helpful,
     n_pos_helpful,
     n_products
 FROM B
