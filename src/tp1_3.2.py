@@ -1,6 +1,5 @@
 import csv
 import math
-import multiprocessing as mp
 import os
 import re
 import time
@@ -87,9 +86,7 @@ def populate_db(curs) -> tuple[int, int]:
     return inserted, total
 
 
-start = time.time()
-
-with open(TXT) as txt:
+def main():
     try:
         print('Processing products...', end='\r')
         while True:
@@ -97,17 +94,23 @@ with open(TXT) as txt:
     except StopIteration:
         pass
 
-ROWS['similars'] = [t for t in ROWS['similars'] if t[1] in PK['products']]
+    ROWS['similars'] = [t for t in ROWS['similars'] if t[1] in PK['products']]
 
-with pg.connect(
-    dbname=os.getenv('PG_DB', 'ecommerce'),
-    user=os.getenv('PG_USER', 'postgres'),
-    password=os.getenv('PG_PASSWORD', 'postgres'),
-    host=os.getenv('PG_HOST', 'localhost'),
-    port=os.getenv('PG_PORT', '5432')
-) as conn:
-    with conn.cursor() as curs:
-        curs.execute(SCHEMA)
-        inserted, total = populate_db(curs)
-        print(f'{inserted:,} / {total:,} rows processed')
-    conn.commit()
+    with pg.connect(
+        dbname=os.getenv('PG_DB', 'ecommerce'),
+        user=os.getenv('PG_USER', 'postgres'),
+        password=os.getenv('PG_PASSWORD', 'postgres'),
+        host=os.getenv('PG_HOST', 'localhost'),
+        port=os.getenv('PG_PORT', '5432')
+    ) as conn:
+        with conn.cursor() as curs:
+            curs.execute(SCHEMA)
+            inserted, total = populate_db(curs)
+            print(f'{inserted:,} / {total:,} rows processed')
+        conn.commit()
+
+
+if __name__ == '__main__':
+    start = time.time()
+    with open(TXT) as txt:
+        main()
