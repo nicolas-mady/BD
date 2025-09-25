@@ -9,7 +9,7 @@ FROM (
         ROW_NUMBER() OVER (
             PARTITION BY grp
             ORDER BY srank
-        ) AS rnk,
+        ) AS ranking,
         grp,
         srank
     FROM products
@@ -17,4 +17,4 @@ FROM (
         srank IS NOT NULL
         AND srank > 0
 )
-WHERE rnk <= 10;
+WHERE ranking <= 10;

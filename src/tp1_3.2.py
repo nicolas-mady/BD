@@ -1,9 +1,12 @@
 import os
 import re
 import csv
-import psycopg2 as pg
 import time
 import math
+from dotenv import load_dotenv
+import psycopg2 as pg
+
+load_dotenv()
 
 TXT = '../data/amazon-meta.txt'
 with open('../sql/schema.sql') as f:
@@ -18,6 +21,8 @@ def nextln(n: int = 1) -> str:
 
 
 def process_product() -> None:
+    while next(txt).strip():
+        continue
     pid = nextln()
     pasin = nextln()
     PK['products'].add(pasin)
@@ -90,8 +95,6 @@ with open(TXT) as txt:
     try:
         print('Processing products...', end='\r')
         while True:
-            while next(txt).strip():
-                continue
             process_product()
     except StopIteration:
         pass
@@ -99,11 +102,11 @@ with open(TXT) as txt:
 ROWS['similars'] = [t for t in ROWS['similars'] if t[1] in PK['products']]
 
 with pg.connect(
-    dbname='ecommerce',
-    user='postgres',
-    password='postgres',
-    host='localhost',
-    port='5432'
+    dbname=os.getenv('PG_DB', 'ecommerce'),
+    user=os.getenv('PG_USER', 'postgres'),
+    password=os.getenv('PG_PASSWORD', 'postgres'),
+    host=os.getenv('PG_HOST', 'localhost'),
+    port=os.getenv('PG_PORT', '5432')
 ) as conn:
     with conn.cursor() as curs:
         curs.execute(SCHEMA)
