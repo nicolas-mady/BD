@@ -14,5 +14,5 @@ FROM (
     FROM reviews
     NATURAL JOIN products
     GROUP BY usr_id, grp
-)
+) ranked_users
 WHERE rnk <= 10;

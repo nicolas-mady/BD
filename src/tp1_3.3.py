@@ -7,28 +7,31 @@ from sqlalchemy import create_engine
 
 load_dotenv()
 
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='PostgreSQL database dashboard for Amazon data analysis')
-    parser.add_argument('--db-host', default=os.getenv('PG_HOST', 'localhost'), 
-                       help='Database host (default: localhost)')
-    parser.add_argument('--db-port', default=os.getenv('PG_PORT', '5432'), 
-                       help='Database port (default: 5432)')
-    parser.add_argument('--db-name', default=os.getenv('PG_DB', 'ecommerce'), 
-                       help='Database name (default: ecommerce)')
-    parser.add_argument('--db-user', default=os.getenv('PG_USER', 'postgres'), 
-                       help='Database user (default: postgres)')
-    parser.add_argument('--db-pass', default=os.getenv('PG_PASSWORD', 'postgres'), 
-                       help='Database password (default: postgres)')
+    parser = argparse.ArgumentParser(
+        description='PostgreSQL database dashboard for Amazon data analysis')
+    parser.add_argument('--db-host', default=os.getenv('PG_HOST', 'localhost'),
+                        help='Database host (default: localhost)')
+    parser.add_argument('--db-port', default=os.getenv('PG_PORT', '5432'),
+                        help='Database port (default: 5432)')
+    parser.add_argument('--db-name', default=os.getenv('PG_DB', 'ecommerce'),
+                        help='Database name (default: ecommerce)')
+    parser.add_argument('--db-user', default=os.getenv('PG_USER', 'postgres'),
+                        help='Database user (default: postgres)')
+    parser.add_argument('--db-pass', default=os.getenv('PG_PASSWORD', 'postgres'),
+                        help='Database password (default: postgres)')
     parser.add_argument('--product-asin', default='0807220280',
-                       help='Product ASIN for queries that require a specific product (default: 0807220280)')
-    parser.add_argument('--output', default='../out',
-                       help='Output directory for CSV files and reports (default: ../out)')
+                        help='Product ASIN for queries that require a specific product (default: 0807220280)')
+    parser.add_argument('--output', default='/app/out',
+                        help='Output directory for CSV files and reports (default: /app/out)')
     return parser.parse_args()
+
 
 args = parse_arguments()
 
-os.system('rm -rf ' + args.output)
-os.system('mkdir -p ' + args.output)
+# Criar diretório de saída se não existir
+os.makedirs(args.output, exist_ok=True)
 
 MENU = '''
 0. Sair
@@ -46,8 +49,8 @@ def main():
     db_url = f"postgresql://{args.db_user}:{args.db_pass}@{args.db_host}:{args.db_port}/{args.db_name}"
     engine = create_engine(db_url)
 
-    *sqls, _ = sorted(os.listdir('../sql'))
-    stmts = [open(f'../sql/{f}').read() for f in sqls]
+    *sqls, _ = sorted(os.listdir('/app/sql'))
+    stmts = [open(f'/app/sql/{f}').read() for f in sqls]
     csv_filenames = [re.sub(r'\.sql$', '.csv', f) for f in sqls]
     query_titles = [
         "Top 5 comentários mais úteis (maior e menor avaliação)",
@@ -71,7 +74,8 @@ def main():
             stmt = stmts[opt - 1]
 
             if opt <= 3:
-                stmt = re.sub(r"pasin = '\w*'", f"pasin = '{args.product_asin}'", stmt)
+                stmt = re.sub(r"pasin = '\w*'",
+                              f"pasin = '{args.product_asin}'", stmt)
 
             print(f"\n=== {query_titles[opt-1]} ===")
 
@@ -79,7 +83,7 @@ def main():
 
             print(f"Total registers: {len(df)}")
             print("\nResults:")
-            print(df.to_string(index=False))
+            print(df)
 
             csv_path = f'{args.output}/{csv_filenames[opt-1]}'
             df.to_csv(csv_path, index=False)

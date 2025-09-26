@@ -13,24 +13,24 @@ load_dotenv()
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Load SNAP Amazon data into PostgreSQL database')
-    parser.add_argument('--db-host', default=os.getenv('PG_HOST', 'localhost'), 
-                       help='Database host (default: localhost)')
-    parser.add_argument('--db-port', default=os.getenv('PG_PORT', '5432'), 
-                       help='Database port (default: 5432)')
-    parser.add_argument('--db-name', default=os.getenv('PG_DB', 'ecommerce'), 
-                       help='Database name (default: ecommerce)')
-    parser.add_argument('--db-user', default=os.getenv('PG_USER', 'postgres'), 
-                       help='Database user (default: postgres)')
-    parser.add_argument('--db-pass', default=os.getenv('PG_PASSWORD', 'postgres'), 
-                       help='Database password (default: postgres)')
+    parser.add_argument('--db-host', default=os.getenv('PG_HOST', 'localhost'),
+                        help='Database host (default: localhost)')
+    parser.add_argument('--db-port', default=os.getenv('PG_PORT', '5432'),
+                        help='Database port (default: 5432)')
+    parser.add_argument('--db-name', default=os.getenv('PG_DB', 'ecommerce'),
+                        help='Database name (default: ecommerce)')
+    parser.add_argument('--db-user', default=os.getenv('PG_USER', 'postgres'),
+                        help='Database user (default: postgres)')
+    parser.add_argument('--db-pass', default=os.getenv('PG_PASSWORD', 'postgres'),
+                        help='Database password (default: postgres)')
     parser.add_argument('--input', default='../data/snap_amazon.txt',
-                       help='Path to SNAP Amazon data file (default: ../data/snap_amazon.txt)')
+                        help='Path to SNAP Amazon data file (default: ../data/snap_amazon.txt)')
     return parser.parse_args()
 
 
 args = parse_arguments()
 
-with open('../sql/schema.sql') as f:
+with open('/app/sql/schema.sql') as f:
     SCHEMA = f.read()
 tables = re.findall(r'(\w+) \(\n', SCHEMA)
 PK = {table: set() for table in tables}
@@ -108,11 +108,6 @@ def populate_db(curs) -> tuple[int, int]:
 
 
 def main():
-    print(f"=== Loading SNAP Amazon ===")
-    print(f"Input file: {args.input}")
-    print(f"Connecting to database: {args.db_user}@{args.db_host}:{args.db_port}/{args.db_name}")
-    print()
-
     try:
         print('Processing products...', end='\r')
         while True:
@@ -132,13 +127,15 @@ def main():
         with conn.cursor() as curs:
             curs.execute(SCHEMA)
             inserted, total = populate_db(curs)
-            print(f'\n=== Loading summary ===')
             print(f'{inserted:,} / {total:,} rows processed successfully')
-            print(f'Total time: {get_time()}')
         conn.commit()
 
 
 if __name__ == '__main__':
+    if not os.path.exists(args.input):
+        print(f'Input file {args.input} not found, downloading from SNAP...')
+        os.system(f'cp ../data/amazon-meta.txt.gz {args.input}.gz')
+        os.system(f'gunzip {args.input}.gz')
     start = time.time()
     with open(args.input) as txt:
         main()

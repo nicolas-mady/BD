@@ -16,5 +16,5 @@ FROM (
     WHERE
         srank IS NOT NULL
         AND srank > 0
-)
+) ranked_products
 WHERE rnk <= 10;

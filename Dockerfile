@@ -1,4 +1,6 @@
-FROM alpine:latest
-LABEL Name=bd Version=0.0.1
-RUN apk add --no-cache fortune
-ENTRYPOINT ["sh", "-c", "fortune -a | cat"]
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src ./src
+CMD ["python", "src/tp1_3.3.py", "--help"]

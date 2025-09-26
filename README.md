@@ -18,3 +18,7 @@ docker compose run --rm app python src/tp1_3.3.py \
   --db-host db --db-port 5432 --db-name ecommerce --db-user postgres --db-pass postgres \
   --output /app/out
 ```
+# 5) Reproduzir do zero
+```sh
+docker compose down -v
+```
