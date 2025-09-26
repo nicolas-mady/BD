@@ -3,6 +3,7 @@ import csv
 import math
 import os
 import re
+import sys
 import time
 from dotenv import load_dotenv
 import psycopg2 as pg
@@ -132,10 +133,15 @@ def main():
 
 
 if __name__ == '__main__':
-    if not os.path.exists(args.input):
-        print(f'Input file {args.input} not found, downloading from SNAP...')
-        os.system(f'cp ../data/amazon-meta.txt.gz {args.input}.gz')
-        os.system(f'gunzip {args.input}.gz')
-    start = time.time()
-    with open(args.input) as txt:
-        main()
+    try:
+        if not os.path.exists(args.input):
+            print(f'Input file {args.input} not found, downloading from SNAP...')
+            os.system(f'cp ../data/amazon-meta.txt.gz {args.input}.gz')
+            os.system(f'gunzip {args.input}.gz')
+        start = time.time()
+        with open(args.input) as txt:
+            main()
+        sys.exit(0)
+    except Exception as e:
+        print(e)
+        sys.exit(1)

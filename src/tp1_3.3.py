@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import sys
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine
@@ -94,4 +95,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+        sys.exit(0)
+    except Exception as e:
+        print(e)
+        sys.exit(1)
