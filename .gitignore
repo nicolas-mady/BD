@@ -33,3 +33,4 @@ docs/tp1_4.1_usage.md
 out/
 log/
 data/snap*
+data/*.gz
