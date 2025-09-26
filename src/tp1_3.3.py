@@ -21,14 +21,14 @@ def parse_arguments():
                        help='Database password (default: postgres)')
     parser.add_argument('--product-asin', default='0807220280',
                        help='Product ASIN for queries that require a specific product (default: 0807220280)')
-    parser.add_argument('--output', default='/out/out',
-                       help='Output directory for CSV files and reports (default: /out)')
+    parser.add_argument('--output', default='../out',
+                       help='Output directory for CSV files and reports (default: ../out)')
     return parser.parse_args()
 
 args = parse_arguments()
 
-if not os.path.exists(args.output):
-    os.makedirs(args.output)
+os.system('rm -rf ' + args.output)
+os.system('mkdir -p ' + args.output)
 
 MENU = '''
 0. Sair
@@ -46,10 +46,18 @@ def main():
     db_url = f"postgresql://{args.db_user}:{args.db_pass}@{args.db_host}:{args.db_port}/{args.db_name}"
     engine = create_engine(db_url)
 
-    sql_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sql')
-    sql_files = [f for f in sorted(os.listdir(sql_dir)) if f.startswith('q') and f.endswith('.sql')]
-    stmts = [open(os.path.join(sql_dir, f)).read() for f in sql_files]
-
+    *sqls, _ = sorted(os.listdir('../sql'))
+    stmts = [open(f'../sql/{f}').read() for f in sqls]
+    csv_filenames = [re.sub(r'\.sql$', '.csv', f) for f in sqls]
+    query_titles = [
+        "Top 5 comentários mais úteis (maior e menor avaliação)",
+        "Produtos similares com maiores vendas",
+        "Evolução diária das médias de avaliação",
+        "10 produtos líderes de venda por grupo",
+        "10 produtos com maior média de avaliações úteis positivas",
+        "5 categorias com maior média de avaliações úteis positivas",
+        "10 clientes que mais fizeram comentários por grupo"
+    ]
     print(MENU)
     while True:
         try:
@@ -61,16 +69,6 @@ def main():
             break
         if 1 <= opt <= 7:
             stmt = stmts[opt - 1]
-            
-            query_titles = [
-                "Top 5 comentários mais úteis (maior e menor avaliação)",
-                "Produtos similares com maiores vendas",
-                "Evolução diária das médias de avaliação",
-                "10 produtos líderes de venda por grupo",
-                "10 produtos com maior média de avaliações úteis positivas",
-                "5 categorias com maior média de avaliações úteis positivas",
-                "10 clientes que mais fizeram comentários por grupo"
-            ]
 
             if opt <= 3:
                 stmt = re.sub(r"pasin = '\w*'", f"pasin = '{args.product_asin}'", stmt)
@@ -83,19 +81,10 @@ def main():
             print("\nResults:")
             print(df.to_string(index=False))
 
-            csv_filenames = [
-                "q1-top5-helpful-reviews.csv",
-                "q2-best-srank.csv", 
-                "q3-daily-rating-evo.csv",
-                "q4-top10-sales-per-group.csv",
-                "q5-top10-prods-help-pos-rev.csv",
-                "q6-top-5-cat-help-pos-rev.csv",
-                "q7-top10-usr-per-grp.csv"
-            ]
-
-            csv_path = os.path.join(args.output, csv_filenames[opt-1])
+            csv_path = f'{args.output}/{csv_filenames[opt-1]}'
             df.to_csv(csv_path, index=False)
             print(f"\nResults saved in: {csv_path}")
+
         else:
             print('Invalid option! Please try again.')
 

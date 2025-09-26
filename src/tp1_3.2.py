@@ -30,8 +30,7 @@ def parse_arguments():
 
 args = parse_arguments()
 
-schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sql', 'schema.sql')
-with open(schema_path) as f:
+with open('../sql/schema.sql') as f:
     SCHEMA = f.read()
 tables = re.findall(r'(\w+) \(\n', SCHEMA)
 PK = {table: set() for table in tables}
